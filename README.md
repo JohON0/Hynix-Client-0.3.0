@@ -6,3 +6,4 @@ Hynix Client — мощный чит для Minecraft версии 1.16.5, пр�
 
 ##Скриншоты
 
+<img alt="" src="[https://i.imgur.com/MxqtPZJ.png](https://i.postimg.cc/x11nkLJj/photo-1-2025-05-06-23-41-02.jpg)"/>
