@@ -1,0 +1,10 @@
+<component name="libraryTable">
+  <library name="libki">
+    <CLASSES>
+      <root url="file://$PROJECT_DIR$/libki" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+    <jarDirectory url="file://$PROJECT_DIR$/libki" recursive="false" />
+  </library>
+</component>
