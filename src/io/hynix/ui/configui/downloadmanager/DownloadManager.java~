@@ -1,0 +1,4 @@
+package io.hynix.ui.configui.downloadmanager;
+
+public class DownloadManager {
+}

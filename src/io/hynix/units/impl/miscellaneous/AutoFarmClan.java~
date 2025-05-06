@@ -1,0 +1,7 @@
+package io.hynix.units.impl.miscellaneous;
+
+import io.hynix.units.api.Unit;
+
+
+public class AutoFarmClan extends Unit {
+}

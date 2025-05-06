@@ -1,0 +1,11 @@
+package io.hynix.units.impl.miscellaneous;
+
+import io.hynix.units.api.Category;
+import io.hynix.units.api.UnitRegister;
+
+@UnitRegister(name="MultiActions", category = Category.Miscellaneous, desc="Позволяет одновременно есть и копать", premium = true)
+public class MultiActions {
+
+    @Subscribe
+    public void onPacket(EventPacket e) {
+}

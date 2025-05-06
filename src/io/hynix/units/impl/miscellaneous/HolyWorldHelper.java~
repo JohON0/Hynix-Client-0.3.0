@@ -1,0 +1,4 @@
+package io.hynix.units.impl.miscellaneous;
+
+public class HolyWorldHelper {
+}

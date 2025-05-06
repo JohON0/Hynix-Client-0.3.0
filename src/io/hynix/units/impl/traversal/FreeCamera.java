@@ -1,0 +1,170 @@
+package io.hynix.units.impl.traversal;
+
+import com.google.common.eventbus.Subscribe;
+import io.hynix.HynixMain;
+import io.hynix.events.impl.EventLivingUpdate;
+import io.hynix.events.impl.EventMotion;
+import io.hynix.events.impl.EventPacket;
+import io.hynix.events.impl.EventRender2D;
+import io.hynix.units.api.Category;
+import io.hynix.units.api.Unit;
+import io.hynix.units.api.UnitRegister;
+import io.hynix.units.impl.combat.AttackAura;
+import io.hynix.units.settings.impl.BooleanSetting;
+import io.hynix.units.settings.impl.SliderSetting;
+import io.hynix.utils.player.FreeCameraUtils;
+import io.hynix.utils.player.MoveUtils;
+import io.hynix.utils.johon0.render.render2d.RenderUtils;
+import io.hynix.utils.text.font.ClientFonts;
+import net.minecraft.network.play.client.CPlayerPacket;
+import net.minecraft.util.MovementInput;
+import net.minecraft.util.MovementInputFromOptions;
+import net.minecraft.util.math.vector.Vector3d;
+
+@UnitRegister(name = "FreeCamera", category = Category.Traversal, desc = "Свободная камера просмотра")
+public class FreeCamera extends Unit {
+
+    private final BooleanSetting drawContrast = new BooleanSetting("Контраст", false);
+    private final SliderSetting speedXZ = new SliderSetting("Скорость по XZ", 1.0f, 0.1f, 5.0f, 0.05f);
+    private final SliderSetting speedY = new SliderSetting("Скорость по Y", 0.5f, 0.1f, 1.0f, 0.05f);
+
+    public FreeCameraUtils fakePlayer = null;
+
+    public FreeCamera() {
+        addSettings(speedXZ, speedY, drawContrast);
+    }
+
+    @Subscribe
+    public void onLivingUpdate(EventLivingUpdate e) {
+        if (fakePlayer != null) {
+            resetPlayerInput();
+
+            fakePlayer.noClip = true;
+            fakePlayer.setOnGround(false);
+
+            MoveUtils.setMotion(speedXZ.getValue(), fakePlayer);
+            if (mc.gameSettings.keyBindJump.isKeyDown()) {
+                fakePlayer.motion.y = speedY.getValue();
+            } else if (mc.gameSettings.keyBindSneak.isKeyDown()) {
+                fakePlayer.motion.y = -speedY.getValue();
+            }
+            fakePlayer.abilities.isFlying = true;
+        }
+    }
+
+    private void resetPlayerInput() {
+        mc.player.movementInput.jump = false;
+        mc.player.movementInput.sneaking = false;
+        mc.player.movementInput.forwardKeyDown = false;
+        mc.player.movementInput.backKeyDown = false;
+        mc.player.movementInput.leftKeyDown = false;
+        mc.player.movementInput.rightKeyDown = false;
+        mc.player.moveForward = 0;
+        mc.player.moveStrafing = 0;
+        mc.player.motion = Vector3d.ZERO;
+    }
+
+    @Subscribe
+    public void onMotion(EventMotion e) {
+        if (fakePlayer == null) toggle();
+
+        mc.player.connection.sendPacket(new CPlayerPacket(mc.player.isOnGround()));
+
+        AttackAura hitAura = HynixMain.getInstance().getModuleManager().getAttackAura();
+        if (hitAura.isEnabled() && hitAura.target != null) {
+            mc.player.rotationYaw = hitAura.rotateVector.x;
+            mc.player.rotationPitch = hitAura.rotateVector.y;
+        }
+
+        mc.player.motion = Vector3d.ZERO; // Предотвращение нежелательных перемещений
+        e.cancel();
+    }
+
+    @Subscribe
+    public void onPacket(EventPacket e) {
+        if (e.getPacket() instanceof CPlayerPacket p) {
+            if (p.moving) {
+                p.x = fakePlayer.getPosX();
+                p.y = fakePlayer.getPosY();
+                p.z = fakePlayer.getPosZ();
+            }
+            p.onGround = fakePlayer.isOnGround();
+            if (p.rotating) {
+                p.yaw = fakePlayer.rotationYaw;
+                p.pitch = fakePlayer.rotationPitch;
+            }
+        }
+    }
+
+    @Subscribe
+    public void onRender2D(EventRender2D e) {
+        renderCameraPosition(e);
+    }
+
+    private void renderCameraPosition(EventRender2D e) {
+        int fakePlayerPosX = (int) fakePlayer.getPosX();
+        int fakePlayerPosY = (int) fakePlayer.getPosY();
+        int fakePlayerPosZ = (int) fakePlayer.getPosZ();
+        int playerPosX = (int) mc.player.getPosX();
+        int playerPosY = (int) mc.player.getPosY();
+        int playerPosZ = (int) mc.player.getPosZ();
+
+        int deltaX = Math.abs(playerPosX - fakePlayerPosX);
+        int deltaY = Math.abs(playerPosY - fakePlayerPosY);
+        int deltaZ = Math.abs(playerPosZ - fakePlayerPosZ);
+
+        String renderPos = String.format("X: %d Y: %d Z: %d", deltaX, deltaY, deltaZ);
+
+        float xCoord = mc.getMainWindow().getScaledWidth() / 2f;
+        float yCoord = mc.getMainWindow().getScaledHeight() / 2f + 10;
+
+        ClientFonts.tenacityBold[16].drawCenteredString(e.getMatrixStack(), renderPos, xCoord, yCoord, -1);
+    }
+
+    @Override
+    public void onEnable() {
+        super.onEnable();
+        if (mc.player == null) return;
+
+        initializeFakePlayer();
+        addFakePlayer();
+        fakePlayer.spawn();
+        mc.setRenderViewEntity(fakePlayer);
+    }
+
+    @Override
+    public void onDisable() {
+        super.onDisable();
+        if (mc.player == null) return;
+
+        resetFlying();
+        removeFakePlayer();
+        mc.setRenderViewEntity(null);
+        mc.player.movementInput = new MovementInputFromOptions(mc.gameSettings);
+    }
+
+    private void initializeFakePlayer() {
+        fakePlayer = new FreeCameraUtils(1337228);
+        fakePlayer.copyLocationAndAnglesFrom(mc.player);
+        fakePlayer.rotationYawHead = mc.player.rotationYawHead;
+        fakePlayer.inventory = mc.player.inventory;
+    }
+
+    private void addFakePlayer() {
+        assert mc.world != null;
+        mc.world.addEntity(1337228, fakePlayer);
+    }
+
+    private void removeFakePlayer() {
+        assert mc.world != null;
+        mc.world.removeEntityFromWorld(1337228);
+        fakePlayer = null;
+    }
+
+    private void resetFlying() {
+        if (fakePlayer != null && fakePlayer.abilities.isFlying) {
+            mc.player.abilities.isFlying = false;
+        }
+        mc.player.motion.y = 0; // Сброс вертикальной скорости
+    }
+}

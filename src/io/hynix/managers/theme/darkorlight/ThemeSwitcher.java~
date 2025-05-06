@@ -1,0 +1,47 @@
+package io.hynix.managers.theme.darkorlight;
+
+import io.hynix.ui.clickgui.ClickGui;
+import io.hynix.utils.johon0.animations.easing.AnimationUtil;
+import io.hynix.utils.johon0.math.MathUtils;
+import io.hynix.utils.johon0.render.color.ColorUtils;
+import static io.hynix.ui.clickgui.ClickGui.themeswapper;
+
+import java.awt.*;
+
+public class ThemeSwitcher {
+    public static boolean themelightofdark; // Состояние темы
+
+    // Цвета для Худа
+    public static int backgroundColor;
+    public static int textcolor;
+    public static int lightcolor;
+
+
+    //Цвета для GUI
+    public static int backgroundpanelcolor;
+    public static int lighttextcolor;
+    public static int lightcolorgui;
+    public static int modescolor;
+
+
+
+
+    public ThemeSwitcher(boolean themelightofdark) {
+        setTheme(themelightofdark);
+        //hud
+        backgroundColor = ColorUtils.interpolateColors(ColorUtils.rgba(5, 5, 5, 200), ColorUtils.rgba(255, 255, 255, 200), themeswapper);
+        textcolor = ColorUtils.interpolateColors(-1, Color.black.getRGB(), themeswapper);
+        lightcolor = ColorUtils.interpolateColors(ColorUtils.rgba(20, 20, 20, 200), ColorUtils.rgba(200, 200, 200, 200), themeswapper);
+
+        //gui
+        backgroundpanelcolor = ColorUtils.interpolateColors(ColorUtils.rgba(10, 10, 10, 255), ColorUtils.rgba(230, 230, 230, 255), themeswapper);
+        lightcolorgui = ColorUtils.interpolateColors(ColorUtils.rgba(40, 40, 40, 255), ColorUtils.rgba(200, 200, 200, 255), themeswapper);
+        lighttextcolor = ColorUtils.interpolateColors(ColorUtils.rgb(200, 200, 200), ColorUtils.rgb(50, 50, 50), themeswapper);
+        modescolor = ColorUtils.interpolateColors(ColorUtils.rgba(35, 35, 35, 255), ColorUtils.rgba(200, 200, 200, 255), themeswapper);
+    }
+
+    public static void setTheme(boolean n) {
+        themelightofdark = n;
+
+    }
+}

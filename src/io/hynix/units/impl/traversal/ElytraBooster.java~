@@ -1,0 +1,44 @@
+package io.hynix.units.impl.traversal;
+
+import com.google.common.eventbus.Subscribe;
+import io.hynix.events.impl.EventMoving;
+import io.hynix.events.impl.EventPacket;
+import io.hynix.events.impl.EventUpdate;
+import io.hynix.units.api.Category;
+import io.hynix.units.api.Unit;
+import io.hynix.units.api.UnitRegister;
+import io.hynix.units.settings.impl.BooleanSetting;
+import io.hynix.units.settings.impl.ModeSetting;
+import io.hynix.units.settings.impl.SliderSetting;
+import io.hynix.utils.johon0.math.TimerUtils;
+import net.minecraft.network.play.server.SPlayerPositionLookPacket;
+
+@UnitRegister(name = "ElytraBooster", category = Category.Traversal, desc = "Ускоряет вас на элитре")
+public class ElytraBooster extends Unit {
+    private final BooleanSetting noBallSwitch = new BooleanSetting("Умный обгон", false);
+    private final BooleanSetting antiflag = new BooleanSetting("Анти флаг", false);
+    private final BooleanSetting damage = new BooleanSetting("Умные удары", false);
+
+    public ElytraBooster() {
+        this.addSettings(this.noBallSwitch, this.antiflag, this.damage);
+    }
+
+    @Override
+    public void onDisable() {
+        mc.timer.timerSpeed = 1.0f;
+        if (antiflag.getValue()) {
+            if (e.getPacket() instanceof SPlayerPositionLookPacket p) {
+                mc.player.setPacketCoordinates(p.getX(), p.getY(), p.getZ());
+                mc.player.setRawPosition(p.getX(), p.getY(), p.getZ());
+                toggle();
+            }
+        }
+        super.onDisable();
+    }
+
+    @Subscribe
+    public void onMove(EventMoving e) {
+        mc.timer.timerSpeed = !mc.player.isElytraOfCape() && mc.player.isElytraFlying() && (Boolean)this.noBallSwitch.getValue() != false ? 1.011f : 1.0f;
+    }
+}
+

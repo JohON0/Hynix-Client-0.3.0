@@ -1,0 +1,35 @@
+package io.hynix.units.impl.traversal;
+
+import com.google.common.eventbus.Subscribe;
+import io.hynix.events.impl.EventLivingTick;
+import io.hynix.events.impl.EventTick;
+import io.hynix.events.impl.EventUpdate;
+import io.hynix.units.api.Category;
+import io.hynix.units.api.Unit;
+import io.hynix.units.api.UnitRegister;
+import net.minecraft.entity.Pose;
+import net.minecraft.network.play.client.CEntityActionPacket;
+
+@UnitRegister(name = "Sneak", category = Category.Traversal, desc = "Позволяет шифтиться", premium = true)
+public class Sneak extends Unit {
+    @Subscribe
+    public void onUpdate(EventUpdate event) {
+        mc.getConnection().sendPacket(new CEntityActionPacket(mc.player, CEntityActionPacket.Action.START_SNEAKING));
+    }
+    @Subscribe
+    public void onTick(EventTick e) {
+            e.isCrouch = true;
+    }
+        if (event instanceof EventGetPose e) {
+            e.setPose(Pose.CROUCHING);
+        }
+    }
+
+    @Override
+    public void onDisable() {
+        super.onDisable();
+        mc.getConnection().sendPacket(new CEntityActionPacket(mc.player, CEntityActionPacket.Action.START_SNEAKING));
+        mc.gameSettings.keyBindSneak.setPressed(false);
+        super.onDisable();
+    }
+}

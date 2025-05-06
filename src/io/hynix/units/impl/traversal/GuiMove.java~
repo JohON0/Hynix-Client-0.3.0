@@ -1,0 +1,132 @@
+package io.hynix.units.impl.traversal;
+
+import com.google.common.eventbus.Subscribe;
+import io.hynix.events.impl.EventCloseContainer;
+import io.hynix.events.impl.EventPacket;
+import io.hynix.events.impl.EventUpdate;
+import io.hynix.units.api.Category;
+import io.hynix.units.api.Unit;
+import io.hynix.units.api.UnitRegister;
+import io.hynix.units.settings.impl.BooleanSetting;
+import io.hynix.utils.johon0.math.TimerUtils;
+import net.minecraft.client.gui.screen.ChatScreen;
+import net.minecraft.client.gui.screen.EditSignScreen;
+import net.minecraft.client.gui.screen.inventory.InventoryScreen;
+import net.minecraft.client.settings.BooleanOption;
+import net.minecraft.client.settings.KeyBinding;
+import net.minecraft.client.util.InputMappings;
+import net.minecraft.network.IPacket;
+import net.minecraft.network.play.client.CClickWindowPacket;
+import net.minecraft.network.play.client.CCloseWindowPacket;
+
+import java.util.*;
+
+@UnitRegister(name = "GuiMove", category = Category.Traversal, desc = "Позволяет ходить с открытыми контейнерами")
+public class GuiMove extends Unit {
+    private static final List<IPacket<?>> packet = new ArrayList<>();
+    public TimerUtils wait = new TimerUtils();
+    public static BooleanSetting byppas = new BooleanSetting("Обход FunTime", false);
+
+    public GuiMove() {
+        addSettings(byppas);
+    }
+
+    public static void addPacket(IPacket p) {
+        if (byppas.getValue())
+            packet.add(p);
+        else
+            mc.getConnection().sendPacket(p);
+    }
+
+    @Subscribe
+    public void onUpdate(EventUpdate e) {
+        if (mc.player != null && mc.player.connection != null && mc.player.connection.getPlayerInfo(mc.player.getUniqueID()) != null) {
+
+            final KeyBinding[] pressedKeys = {mc.gameSettings.keyBindForward, mc.gameSettings.keyBindBack,
+                    mc.gameSettings.keyBindLeft, mc.gameSettings.keyBindRight, mc.gameSettings.keyBindJump,
+                    mc.gameSettings.keyBindSprint};
+
+            if (byppas.getValue()) {
+                if (!wait.hasTimeElapsed(200 + (mc.player.connection.getPlayerInfo(mc.player.getUniqueID())).getResponseTime() + (packet.size() * 25)) || activeTask) {
+                    for (KeyBinding keyBinding : pressedKeys) {
+                        keyBinding.setPressed(false);
+                    }
+                    return;
+                }
+            }
+
+
+            if (mc.currentScreen instanceof ChatScreen || mc.currentScreen instanceof EditSignScreen) {
+                return;
+            }
+
+            updateKeyBindingState(pressedKeys);
+        }
+    }
+    @Subscribe
+    public void onPacket(EventPacket e) {
+        if(!isMoving() || activeTask){
+            for (IPacket p : packet) {
+                mc.getConnection().getNetworkManager().sendPacketWithoutEvent(p);
+            }
+
+            packet.clear();
+        }
+        if (byppas.getValue()) {
+            if (e.getPacket() instanceof CClickWindowPacket && isMoving()) {
+                packet.add(e.getPacket());
+                e.cancel();
+            }
+            if (e.getPacket() instanceof CCloseWindowPacket) {
+                e.cancel();
+                sendPackets();
+            }
+        }
+    }
+
+    public void onClose(EventCloseContainer e) {
+        if (byppas.getValue()) {
+            if (mc.currentScreen instanceof InventoryScreen && !packet.isEmpty()) {
+                sendPackets();
+                e.cancel();
+            }
+        }
+    }
+
+    public static boolean activeTask = false;
+
+    public void sendPackets() {
+        if(packet.isEmpty() || activeTask)
+            return;
+        new Thread(() -> {
+            wait.reset();
+            try {
+                Thread.sleep(200);
+
+                for (IPacket p : packet) {
+                    mc.getConnection().getNetworkManager().sendPacketWithoutEvent(p);
+                }
+
+                packet.clear();
+
+                mc.getConnection().getNetworkManager().sendPacketWithoutEvent(new CCloseWindowPacket());
+
+            } catch (InterruptedException ex) {
+                throw new RuntimeException(ex);
+            }
+        }).start();
+    }
+
+    public static boolean isMoving() {
+        if(mc.player.movementInput == null)
+            return false;
+        return mc.player.movementInput.moveForward != 0f || mc.player.movementInput.moveStrafe != 0f;
+    }
+
+    private void updateKeyBindingState(KeyBinding[] keyBindings) {
+        for (KeyBinding keyBinding : keyBindings) {
+            boolean isKeyPressed = InputMappings.isKeyDown(mc.getMainWindow().getHandle(), keyBinding.getDefault().getKeyCode());
+            keyBinding.setPressed(isKeyPressed);
+        }
+    }
+}

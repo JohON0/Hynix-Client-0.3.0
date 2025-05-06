@@ -1,0 +1,32 @@
+package io.hynix.units.impl.display;
+
+import io.hynix.HynixMain;
+import io.hynix.managers.premium.PremiumChecker;
+import io.hynix.ui.notifications.impl.WarningNotify;
+import io.hynix.units.api.Category;
+import io.hynix.units.api.Unit;
+import io.hynix.units.api.UnitRegister;
+import io.hynix.units.settings.impl.BooleanSetting;
+import io.hynix.units.settings.impl.SliderSetting;
+import net.minecraft.util.text.TextFormatting;
+
+@UnitRegister(name = "Animations", category = Category.Display, desc = "Добавляет всякие анимации в игру", premium = true)
+public class Animations extends Unit {
+    public final BooleanSetting animchunks = new BooleanSetting("Анимировать чанки", true);
+    public final BooleanSetting animationcontainer = new BooleanSetting("Анимировать Контейнеры", true);
+    public final SliderSetting speedupdatechunk = new SliderSetting("Скорость обновления", 5.0f, 1f, 10.0f, 1f).setVisible(() -> animchunks.getValue());
+
+    public Animations() {
+        addSettings(animchunks, animationcontainer,speedupdatechunk);
+    }
+
+    @Override
+    public void onEnable() {
+        if (!PremiumChecker.isPremium) {
+            toggle();
+            HynixMain.getInstance().getNotifyManager().add(new WarningNotify("Модуль " + getName() + " работает только для " + TextFormatting.GOLD + "премиум " + TextFormatting.WHITE + "пользователей!", 5000));
+            print("Предупреждение: Модуль " + getName() + " работает только для премиум пользователей! Если хочешь подержать проект, то премиум-подписку можно преобрести на сайте https://hynix.fun/");
+        }
+        super.onEnable();
+    }
+}
