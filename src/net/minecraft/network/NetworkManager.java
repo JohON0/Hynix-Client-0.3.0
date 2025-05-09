@@ -361,9 +361,10 @@ public class NetworkManager extends SimpleChannelInboundHandler<IPacket<?>> {
                 //channel.pipeline().addLast(new Socks4ProxyHandler(new InetSocketAddress("93.178.82.123", 3629)));
                 channel.pipeline().addLast("timeout", new ReadTimeoutHandler(30)).addLast("splitter", new NettyVarint21FrameDecoder()).addLast("decoder", new NettyPacketDecoder(PacketDirection.CLIENTBOUND)).addLast("prepender", new NettyVarint21FrameEncoder()).addLast("encoder", new NettyPacketEncoder(PacketDirection.SERVERBOUND)).addLast("packet_handler", networkmanager);
 
-                if (channel instanceof SocketChannel) {
-                    UserConnectionImpl user = new UserConnectionImpl(channel, true);
-                    new ProtocolPipelineImpl(user);
+                // if (channel instanceof SocketChannel) {
+                //     UserConnectionImpl user = new UserConnectionImpl(channel, true);
+                //     new ProtocolPipelineImpl(user);
+                //пастеры не смогли убрать эти строки и жалуются на нерабочие сервера(
 //                   if (ViaLoadingBase.getInstance().getTargetVersion().getVersion() != HynixMain.getInstance().getViaMCP().getNATIVE_VERSION()) {
 //                        channel.pipeline().addBefore("encoder", "via-encoder", new ViaEncoder(user));
 //                        channel.pipeline().addBefore("decoder", "via-decoder", new ViaDecoder(user));
