@@ -369,7 +369,7 @@ public class NetworkManager extends SimpleChannelInboundHandler<IPacket<?>> {
 //                        channel.pipeline().addBefore("encoder", "via-encoder", new ViaEncoder(user));
 //                        channel.pipeline().addBefore("decoder", "via-decoder", new ViaDecoder(user));
 //                    }
-                }
+                // а сам забыл убрать }
             }
         }).channel(oclass).connect(address, serverPort).syncUninterruptibly();
         return networkmanager;
