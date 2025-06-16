@@ -1356,8 +1356,8 @@ public class Minecraft extends RecursiveEventLoop<Runnable> implements ISnooperI
             } else if (!this.player.isRowingBoat()) {
                 switch (this.objectMouseOver.getType()) {
                     case ENTITY:
-//                        AttackOrder.sendFixedAttack(this.player, ((EntityRayTraceResult) this.objectMouseOver).getEntity(), Hand.MAIN_HAND);
-
+                        this.playerController.attackEntity(this.player, ((EntityRayTraceResult) this.objectMouseOver).getEntity());
+                        this.player.swingArm(Hand.MAIN_HAND);
                         break;
 
                     case BLOCK:
@@ -1377,7 +1377,7 @@ public class Minecraft extends RecursiveEventLoop<Runnable> implements ISnooperI
                         this.player.resetCooldown();
                 }
 
-//                AttackOrder.sendConditionalSwing(this.objectMouseOver, Hand.MAIN_HAND);
+                this.player.swingArm(Hand.MAIN_HAND);
             }
         }
     }
